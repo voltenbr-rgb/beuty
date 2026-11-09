@@ -1,6 +1,6 @@
 {
-  "name": "Beauty Studio PRO",
-  "short_name": "Beauty PRO",
+  "name": "Painel de Gestão PRO",
+  "short_name": "Gestão PRO",
   "id": "./",
   "start_url": "./",
   "scope": "./",
@@ -32,5 +32,6 @@
       "type": "image/png",
       "purpose": "maskable"
     }
-  ]
+  ],
+  "description": "Painel profissional de gestão, agenda e resultados."
 }

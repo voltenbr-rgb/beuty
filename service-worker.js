@@ -1,5 +1,5 @@
 /* Cache simples: rede primeiro (sempre pega a versão nova), cache só como reserva offline. /api nunca é cacheada. */
-const CACHE='beauty-studio-v5';
+const CACHE='beauty-studio-v6';
 const ASSETS=['./','index.html','assets/css/style.css','assets/js/app.js','manifest.json','assets/icons/icon-192.png'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)).catch(()=>{}));self.skipWaiting()});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(n=>n!==CACHE).map(n=>caches.delete(n)))).then(()=>self.clients.claim()))});
