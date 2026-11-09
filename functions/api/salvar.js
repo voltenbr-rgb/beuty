@@ -82,7 +82,10 @@ export async function onRequestGet(context) {
         : json({ error: "Senha master inválida" }, 403);
     }
 
-    const db = context.env.DB;
+    const db = context.env && context.env.DB;
+    if (!db || typeof db.prepare !== 'function') {
+      return json({ error: 'Banco D1 não conectado. Em Cloudflare Pages > Settings > Functions > D1 database bindings, configure a variável exatamente como DB e selecione o banco manicure001.' }, 503);
+    }
     await garantirTabela(db);
 
     const store = url.searchParams.get("store");
@@ -118,7 +121,10 @@ export async function onRequestPost(context) {
     if (negado) return negado;
 
     const body = await context.request.json();
-    const db = context.env.DB;
+    const db = context.env && context.env.DB;
+    if (!db || typeof db.prepare !== 'function') {
+      return json({ error: 'Banco D1 não conectado. Em Cloudflare Pages > Settings > Functions > D1 database bindings, configure a variável exatamente como DB e selecione o banco manicure001.' }, 503);
+    }
 
     // Compatibilidade com o formato original
     if (!body.records && !body.store && body.nome !== undefined) {

@@ -1,4 +1,4 @@
-/* Beauty Studio PRO — dados locais (IndexedDB). Camada de dados isolada para futura troca por Cloudflare D1. */
+/* Beauty Studio PRO — IndexedDB local com sincronização Cloudflare D1 pela Function /api/salvar. */
 const $=s=>document.querySelector(s),STORES=['clients','barbers','services','appointments','finance','products','stock','settings'];
 let DB,C={},DEMO=0,DEMO_PROFILE='manicure';
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -8,7 +8,7 @@ const br=d=>d?d.split('-').reverse().join('/'):'';const uid=()=>Date.now().toStr
 const svo=()=>[...C.services].sort((a,b)=>a.id<b.id?-1:1),svN=id=>svo().findIndex(s=>s.id===id)+1;
 const req=r=>new Promise((a,b)=>{r.onsuccess=()=>a(r.result);r.onerror=()=>b(r.error)});
 const os=(s,m='readonly')=>DB.transaction(s,m).objectStore(s);
-const dbOpen=()=>new Promise((a,b)=>{const r=indexedDB.open(DEMO?'beauty_demo_'+DEMO_PROFILE:(LOJA>1?'beautypro_l'+LOJA:'beautypro'),1);r.onupgradeneeded=()=>STORES.forEach(s=>r.result.createObjectStore(s,{keyPath:'id'}));r.onsuccess=()=>{DB=r.result;a()};r.onerror=()=>b(r.error)});
+const dbOpen=()=>new Promise((a,b)=>{const r=indexedDB.open(DEMO?'beauty_demo_v2_'+DEMO_PROFILE:(LOJA>1?'beautypro_l'+LOJA:'beautypro'),2);r.onupgradeneeded=()=>STORES.forEach(s=>{if(!r.result.objectStoreNames.contains(s))r.result.createObjectStore(s,{keyPath:'id'})});r.onsuccess=()=>{DB=r.result;a()};r.onerror=()=>b(r.error)});
 const load=async()=>{for(const s of STORES)C[s]=await req(os(s).getAll())};
 const put=async(s,o,ns)=>{if(!ns)o._u=Date.now();await req(os(s,'readwrite').put(o));const i=C[s].findIndex(x=>x.id===o.id);i<0?C[s].push(o):C[s][i]=o;if(!ns&&!DEMO)push(s,o)};
 const del=async(s,id,ns)=>{await req(os(s,'readwrite').delete(id));C[s]=C[s].filter(x=>x.id!==id);if(!ns&&!DEMO)pushDel(s,id)};
@@ -218,8 +218,23 @@ const lname=n=>(lojaList().find(x=>x.n===n)||{}).name||'Loja '+n,lActive=n=>loja
 async function gpushAdm(){const u=GL.adm._u;if(!GL.adm._d)return;const{_u,_d,_v,...d}=GL.adm,j=await api('POST',{records:[{store:'global',id:'adm',data:JSON.stringify(d),updated:u,deleted:0}]});if(GL.adm._u===u){GL.adm._d=0;GL.adm._v=j.stamp||0;gsave()}}
 const nextU=id=>Math.max(Date.now(),((GL[id]||{})._v||0)+1,((GL[id]||{})._u||0)+1);
 function gset(id,patch){GL[id]={...GL[id],...patch,_u:nextU(id),_d:1};gsave();gpushAdm().catch(()=>{})}
-async function gsetNow(patch){GL.adm={...GL.adm,...patch,_u:nextU('adm'),_d:1};gsave();await gpushAdm();
- const g=await api('GET',null,0,'?store=global'),r=(g.records||[]).find(x=>x.id==='adm');if(!r||r.updated!==(GL.adm._v||GL.adm._u))throw new Error('o servidor não confirmou a gravação (reenvie a pasta functions)')}
+async function gsetNow(patch){
+ GL.adm={...GL.adm,...patch,_u:nextU('adm'),_d:1};gsave();
+ const u=GL.adm._u,{_u,_d,_v,...payload}=GL.adm;let lastError=null;
+ for(let attempt=1;attempt<=3;attempt++){
+  try{
+   const saved=await api('POST',{records:[{store:'global',id:'adm',data:JSON.stringify(payload),updated:u,deleted:0}]},0);
+   if(!saved.success||Number(saved.saved)<1)throw new Error(saved.error||'O servidor não confirmou nenhum registro.');
+   const check=await api('GET',null,0,'?store=global&since=0');
+   const row=(check.records||[]).find(x=>x.id==='adm'&&!x.deleted);
+   if(!row)throw new Error('O registro ADM não foi encontrado no D1.');
+   const remote=JSON.parse(row.data||'{}');
+   if(JSON.stringify(remote)!==JSON.stringify(payload))throw new Error('O D1 recebeu a gravação, mas os dados retornados não conferem.');
+   GL.adm._d=0;GL.adm._v=row.updated||saved.stamp||Date.now();gsave();return true;
+  }catch(err){lastError=err;if(attempt<3)await new Promise(resolve=>setTimeout(resolve,500*attempt));}
+ }
+ throw new Error((lastError&&lastError.message)||'Falha ao confirmar a gravação no D1.');
+}
 async function gsync(){const before=JSON.stringify([GL.lojas,GL.adm]);try{const j=await api('GET',null,0,'?store=global&since='+Math.max(0,(GL._gv||0)-1));for(const r of j.records||[]){GL._gv=Math.max(GL._gv||0,r.updated||0);if(!['lojas','adm'].includes(r.id)||r.deleted)continue;const l=GL[r.id]||{};if(l._d||r.updated===l._v)continue;try{GL[r.id]={...JSON.parse(r.data),_u:r.updated,_v:r.updated,_d:0}}catch{}}
  if(GL.adm._d)await gpushAdm();gsave()}catch{}return JSON.stringify([GL.lojas,GL.adm])!==before}
 const entryMode=()=>GL.adm.entry==='free'?'free':'pin',SCOL=['#3b82f6','#10b981','#f59e0b','#8b5cf6','#ec4899','#14b8a6','#f97316','#6366f1','#84cc16','#ef4444'];
@@ -234,7 +249,7 @@ const hcache=()=>{try{return JSON.parse(localStorage.getItem('beauty_h'))||{}}ca
 
 async function enterDemo(profile){
  try{sessionStorage.removeItem('beauty_in')}catch{}DEMO=1;DEMO_PROFILE=profile;LOJA=1;ADMS=0;ADMD=0;refreshProfileUi();
- try{if(DB)DB.close();C={};await dbOpen();await load();if(!C.clients.length)await seedDemo(profile);
+ try{if(DB)DB.close();C={};await dbOpen();await load();const marker=C.settings.find(x=>x.id==='demo_seed');if(!marker){for(const store of STORES){await req(os(store,'readwrite').clear())}C={};await load();await seedDemo(profile);await put('settings',{id:'demo_seed',version:2,profile},1)}
   document.body.classList.remove('home','adm');rdy=1;theme();brand();
   $('#lojatag').textContent='🧪 DEMONSTRAÇÃO · '+(profile==='manicure'?'MANICURE':'CABELEIREIRA');
   const sb=$('#synbar');let ex=$('#exitDemo');if(!ex){ex=document.createElement('button');ex.id='exitDemo';ex.className='btn g';ex.textContent='← Sair da demonstração';sb.append(ex)}
@@ -264,8 +279,8 @@ async function enter(n,pg){DEMO=0;$('#exitDemo')?.remove();$('#sync').hidden=fal
  ADMS=0;refreshProfileUi();document.body.classList.remove('home','adm');$('#modal').hidden=true;rdy=1;brand();$('#lojatag').textContent=lojaList().length>1?'🏪 '+lname(n):'';go(pg||'dash');sync(true)}
 function showHome(){DEMO=0;$('#exitDemo')?.remove();$('#sync').hidden=false;rdy=0;ADMS=0;ADMD=0;document.body.classList.remove('adm');theme();try{sessionStorage.removeItem('beauty_in')}catch{}document.body.classList.add('home');$('#modal').hidden=true;renderHome()}
 function renderHome(){const hc=hcache(),H=$('#home');
- H.innerHTML=`<button id=mstr aria-hidden=true tabindex=-1></button><div class=hm><img class=hlg src="${esc(hc.logo||'assets/icons/icon-192.png')}" alt=""><h1>${esc(hc.name||'Beauty Studio PRO')}</h1><p class="mu sub">Como você deseja entrar?</p><div class=hcards><button class=hc id=hl><i>🏪</i><b>Loja</b><small>Agenda, caixa, clientes e estoque</small></button><button class=hc id=ha><i>🔐</i><b>ADM</b><small>Resumo, relatórios e configurações</small></button></div><p class="mu hf">Beauty Studio PRO</p></div>`;
- $('#hl').onclick=()=>{const a=lojaList();a.length===1?storeGo(a[0].n):pickStore()};$('#ha').onclick=admLogin;$('#mstr').onclick=masterLogin}
+ H.innerHTML=`<button id=mstr aria-hidden=true tabindex=-1></button><div class=hm><img class=hlg src="${esc(hc.logo||'assets/icons/icon-192.png')}" alt=""><h1>${esc(hc.name||'Beauty Studio PRO')}</h1><p class="mu sub">Como você deseja entrar?</p><div class=hcards><button class=hc id=hl><i>🏪</i><b>Loja</b><small>Agenda, caixa, clientes e estoque</small></button><button class=hc id=ha><i>🔐</i><b>ADM</b><small>Resumo, relatórios e configurações</small></button>${GL.adm.demoEnabled?`<button class=hc id=demoHomeManicure><i>💅</i><b>Conhecer modo manicure</b><small>Demonstração com clientes e atendimentos fictícios</small></button><button class=hc id=demoHomeHair><i>💇</i><b>Conhecer modo cabeleireira</b><small>Demonstração com clientes e atendimentos fictícios</small></button>`:''}</div><p class="mu hf">Beauty Studio PRO</p></div>`;
+ $('#hl').onclick=()=>{const a=lojaList();a.length===1?storeGo(a[0].n):pickStore()};$('#ha').onclick=admLogin;$('#mstr').onclick=masterLogin;$('#demoHomeManicure')?.addEventListener('click',()=>enterDemo('manicure'));$('#demoHomeHair')?.addEventListener('click',()=>enterDemo('cabeleireira'))}
 function storeGo(n){entryMode()==='free'?enter(n):storeLogin(n)}
 function pickStore(){const m=$('#modal');m.hidden=false;m.innerHTML=`<div class=card><h3>Escolha a loja</h3><p class=mu style="margin:0 0 6px">Toque na loja para entrar.</p>${lojaList().map(x=>`<button class=sl data-n=${x.n} style="--sc:${SCOL[(x.n-1)%SCOL.length]}"><i>${x.n}</i><span>${esc(x.name)}</span><em>›</em></button>`).join('')}<button class="btn g" id=xcn style="margin-top:8px;width:100%">Cancelar</button></div>`;
  m.onclick=e=>{const b=e.target.closest('[data-n]');if(b){m.hidden=true;storeGo(+b.dataset.n)}else if(e.target.id==='modal'||e.target.id==='xcn')m.hidden=true}}
@@ -316,7 +331,7 @@ function admRender(){const co={open:'09:00',close:'19:00',days:'1,2,3,4,5,6',...
  const showLogo=()=>{$('#alg').style.display=DR.logo?'':'none';$('#alg').src=DR.logo||'';$('#aln').hidden=!!DR.logo};
  $('#alf').onchange=e=>{const f=e.target.files[0];if(!f)return;if(f.size>15e6)return toast('Imagem muito grande (máx. 15 MB).',1);img2url(f,320,/jpe?g/i.test(f.type),25e4).then(d=>{DR.logo=d;showLogo();dirty()}).catch(()=>toast('Não foi possível ler a imagem.',1))};
  $('#alr').onclick=()=>{DR.logo='';showLogo();dirty()};
- $('#acard').oninput=$('#acard').onchange=dirty;$('#profile').onchange=dirty;$('#layout').onchange=dirty;
+ $('#acard').oninput=$('#acard').onchange=dirty;$('#profile').onchange=dirty;$('#layout').onchange=()=>{document.body.dataset.layout=$('#layout').value;document.body.offsetHeight;dirty()};
  const saveAll=async()=>{const sp={},bad=[],names={...(GL.adm.names||{})};
   H.querySelectorAll('[data-sp]').forEach(i=>{const v=i.value.trim();if(!v||v===PIN0)return;if(v.length<4)bad.push(lname(+i.dataset.sp));else sp[i.dataset.sp]=v});
   if(bad.length)return toast('Senha com ao menos 4 caracteres: '+bad.join(', ')+'.',1);
@@ -325,8 +340,8 @@ function admRender(){const co={open:'09:00',close:'19:00',days:'1,2,3,4,5,6',...
   if(!co.name)return toast('Informe o nome comercial.',1);if(!co.open||!co.close||m2(co.open)>=m2(co.close))return toast('O horário de fechamento deve ser depois da abertura.',1);
   const b=$('#asv');b.disabled=true;b.textContent='⏳ Salvando...';$('#asv2').disabled=true;
   const patch={co,accent:DR.accent,theme:DR.theme,entry:DR.entry,spins:sp,names,main:+$('#cm').value,startup:$('#cs').value,profile:$('#profile').value,layout:$('#layout').value};if($('#cn').value.trim())patch.name=$('#cn').value.trim();
-  let ok=1;try{await gsetNow(patch);toast('Configurações salvas e sincronizadas com todos os aparelhos.')}catch(e){ok=0;toast('Salvas só neste aparelho: '+e.message+'. Vou tentar de novo automaticamente.',1)}
-  ADMD=0;theme();refreshProfileUi();admRender()};
+  try{await gsetNow(patch);ADMD=0;toast('Configurações salvas e confirmadas no banco D1.');theme();document.body.dataset.layout=GL.adm.layout||'premium';refreshProfileUi();admRender();}
+  catch(e){ADMD=1;$('#asv').disabled=false;$('#asv').textContent='💾 Tentar salvar novamente';if($('#asv2')){$('#asv2').disabled=false;$('#asv2').textContent='💾 Tentar salvar novamente'}$('#adirty').hidden=false;$('#svbar').hidden=false;toast('Não foi possível confirmar no D1: '+e.message+'. Suas alterações continuam nesta tela; tente novamente.',1);}};
  $('#asv').onclick=$('#asv2').onclick=saveAll;
  $('#bk').onclick=()=>{const stores={};L.forEach(x=>{const d=(SN[x.n]||{}).D;if(d)stores[x.n]={name:x.name,data:d}});dl(`backup-barber-${today()}.json`,JSON.stringify({app:'barber-dashboard-pro',v:2,at:new Date().toISOString(),stores}),'application/json')};
  $('#ri').onchange=async e=>{const f=e.target.files[0];if(!f)return;const n=+$('#rst').value;try{const j=JSON.parse(await f.text()),d=j.app==='barber-dashboard-pro'&&(j.v===2?(j.stores[n]||{}).data:j.data);if(!d||!STORES.every(z=>Array.isArray(d[z])))throw 0;
@@ -351,7 +366,7 @@ function masterLogin(){const m=$('#modal');m.hidden=false;m.innerHTML=`<form cla
  m.onclick=e=>{if(e.target.id==='modal'||e.target.id==='xcn')m.hidden=true};setTimeout(()=>$('#mp')?.focus(),50);
  m.querySelector('form').onsubmit=async e=>{e.preventDefault();const pin=$('#mp').value;if(!pin)return;const b=m.querySelector('.btn');b.disabled=true;const ok=await masterOk(pin);b.disabled=false;if(!ok){toast('Senha master incorreta.',1);$('#mp').value='';return}masterPanel(pin)}}
 function masterPanel(pin){const m=$('#modal'),st=GL.lojas.stores||[],slot=n=>st.find(x=>x.n===n)||{n,name:'',on:n===1};
- m.innerHTML=`<form class=card><h3>🛠 Painel Master</h3><p class=mu>Marque as lojas liberadas para este cliente. O ADM dele só enxerga as lojas ativas.</p>${Array.from({length:MAXL},(_,i)=>{const x=slot(i+1);return `<div class=mrow style="align-items:center"><label style="margin:0;display:flex;gap:8px;align-items:center;flex:none;width:96px;color:var(--tx)"><input type=checkbox style="width:auto" name=on${i+1} ${x.on||i===0?'checked':''} ${i===0?'disabled':''}> Loja ${i+1}</label><input name=nm${i+1} placeholder="Nome (opcional)" value="${esc(x.name||'')}" style="flex:1;min-width:0"></div>`}).join('')}<div class=card style="margin-top:12px"><h3>🧪 Demonstrações para apresentar</h3><p class=mu>Abre uma loja fictícia isolada. Cadastros, agendamentos e valores de teste não entram no banco real nem alteram as lojas do cliente.</p><div class=bar><button type=button class=btn id=demoManicure>💅 Testar modo manicure</button><button type=button class=btn id=demoHair>💇 Testar modo cabeleireira</button></div></div><div class=bar style="margin-top:14px"><button class=btn>Salvar desbloqueio</button><button type=button class="btn g" id=mrs>Redefinir senha ADM (2506)</button><button type=button class="btn g" id=xcn>Fechar</button></div></form>`;
+ m.innerHTML=`<form class=card><h3>🛠 Painel Master</h3><p class=mu>Marque as lojas liberadas para este cliente. O ADM dele só enxerga as lojas ativas.</p>${Array.from({length:MAXL},(_,i)=>{const x=slot(i+1);return `<div class=mrow style="align-items:center"><label style="margin:0;display:flex;gap:8px;align-items:center;flex:none;width:96px;color:var(--tx)"><input type=checkbox style="width:auto" name=on${i+1} ${x.on||i===0?'checked':''} ${i===0?'disabled':''}> Loja ${i+1}</label><input name=nm${i+1} placeholder="Nome (opcional)" value="${esc(x.name||'')}" style="flex:1;min-width:0"></div>`}).join('')}<div class=card style="margin-top:12px"><h3>🧪 Demonstrações para apresentar</h3><p class=mu>Ative para que visitantes e clientes possam conhecer o sistema pela tela inicial. Os cadastros, agendamentos e valores fictícios ficam isolados e não entram no banco real.</p><label class=ck><input type=checkbox name=demoEnabled ${GL.adm.demoEnabled?'checked':''}> Permitir demonstrações na tela inicial</label><div class=bar><button type=button class=btn id=demoManicure>💅 Testar modo manicure</button><button type=button class=btn id=demoHair>💇 Testar modo cabeleireira</button></div></div><div class=bar style="margin-top:14px"><button class=btn>Salvar desbloqueio</button><button type=button class="btn g" id=mrs>Redefinir senha ADM (2506)</button><button type=button class="btn g" id=xcn>Fechar</button></div></form>`;
  m.onclick=e=>{if(e.target.id==='modal'||e.target.id==='xcn')m.hidden=true};
  $('#demoManicure').onclick=()=>{m.hidden=true;enterDemo('manicure')};$('#demoHair').onclick=()=>{m.hidden=true;enterDemo('cabeleireira')};
  $('#mrs').onclick=()=>{if(!confirm('Redefinir a senha de ADM para 2506?'))return;gset('adm',{pin:PIN0});toast('Senha de ADM redefinida para 2506.')};
@@ -360,7 +375,9 @@ function masterPanel(pin){const m=$('#modal'),st=GL.lojas.stores||[],slot=n=>st.
   let stamp=0;try{const r=await fetch(API,{method:'POST',headers:h,cache:'no-store',body:JSON.stringify({records:[{store:'global',id:'lojas',data:JSON.stringify({stores}),updated:u,deleted:0}]})}),j=await r.json().catch(()=>({}));
    if(r.status===403){toast('O servidor recusou a senha master.',1);return}if(!r.ok||j.error||!j.saved)throw 0;stamp=j.stamp||0}
   catch{msg='Salvo só neste aparelho: o banco não respondeu (confira se a pasta functions foi enviada).';er=1}
-  GL.lojas={stores,_u:u,_v:stamp,_d:er?1:0};gsave();m.hidden=true;toast(msg,er);if(!ADMS)renderHome()}}
+  GL.lojas={stores,_u:u,_v:stamp,_d:er?1:0};GL.adm={...GL.adm,demoEnabled:!!f.demoEnabled.checked,_u:nextU('adm'),_d:1};gsave();
+  try{await gpushAdm();if(!er)msg='Lojas e demonstrações salvas no D1 para todos os aparelhos.'}catch(e){msg='Lojas salvas, mas a configuração de demonstração ficou apenas neste aparelho: '+e.message;er=1}
+  m.hidden=true;toast(msg,er);if(!ADMS)renderHome()}}
 $('#hsup').onclick=supOpen;if(!(window.CSS&&CSS.supports&&CSS.supports('-webkit-text-security','disc')))new MutationObserver(()=>document.querySelectorAll('input[data-pw]:not([type=password])').forEach(i=>{i.type='password';i.autocomplete='new-password'})).observe(document.body,{childList:true,subtree:true});
 (async()=>{theme();try{await openStore(1)}catch(e){document.body.innerHTML='<p style="padding:30px">Seu navegador bloqueou o armazenamento local (IndexedDB). Saia do modo anônimo.</p>';return}
  if(!GL.adm.pin&&S().pin)gset('adm',{pin:S().pin});brand();

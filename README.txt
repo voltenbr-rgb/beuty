@@ -1,11 +1,11 @@
 BEAUTY STUDIO PRO — PACOTE PARA CLOUDFLARE PAGES
-Banco D1 de destino: manicure001
+Banco D1 de destino: manicure001 (binding variável: DB)
 
-BARBER DASHBOARD PRO
+BEAUTY STUDIO PRO
 Publicação: Cloudflare Pages > Upload direto > envie esta pasta (index.html na raiz). Sem build, sem Node.
 Instalar: abra o site no Chrome/Android > menu > "Instalar app". Funciona offline após o primeiro acesso.
-Dados: IndexedDB do navegador. SEM sincronização entre dispositivos e SEM autenticação segura multiusuário.
-Faça backup em Configurações > Exportar backup JSON. Camada de dados isolada em assets/js/app.js (put/del/load) para futura migração à Cloudflare D1.
+Dados operacionais: IndexedDB local com sincronização para Cloudflare D1 pela Function /api/salvar. O binding D1 deve se chamar exatamente DB e apontar para o banco manicure001.
+Faça backup em Configurações > Exportar backup JSON. A sincronização D1 acontece pela Function em functions/api/salvar.js.
 PDF: Relatórios > Baixar PDF > "Salvar como PDF" na janela de impressão.
 
 --- ATUALIZAÇÃO ---
@@ -95,7 +95,7 @@ Esta versão foi adaptada para dois modelos de negócio:
 O sistema de barbearia original permanece separado; esta versão não oferece esse perfil no ADM.
 
 No ADM > Configurações:
-- Modelo de negócio: seleciona Barbearia, Manicure ou Cabeleireira.
+- Modelo de negócio: seleciona Manicure ou Cabeleireira.
 - Tema de cores: Escuro ou Claro.
 - Layout: 5 opções independentes das cores (Premium, Compacto, Cards destacados,
   Minimalista e Espaçado/amplo).
@@ -105,15 +105,17 @@ Na área MASTER (toque no ponto do canto superior direito da tela inicial, senha
 - Mantido o limite de até 10 lojas.
 - Mantidos Salvar desbloqueio e Redefinir senha ADM.
 - Adicionados os botões "Testar modo manicure" e "Testar modo cabeleireira".
+- A opção "Permitir demonstrações na tela inicial" libera esses dois acessos para visitantes e clientes, sem senha MASTER.
 - As demonstrações criam clientes, profissionais, serviços, agendamentos, movimentações,
   produtos e valores fictícios.
 - Cada demonstração usa um IndexedDB local separado (beauty_demo_manicure / beauty_demo_cabeleireira).
   Nenhum registro de demonstração é enviado ao D1 ou misturado com lojas reais.
 - Use "Sair da demonstração" para voltar à tela inicial.
+- O MASTER pode desativar a demonstração a qualquer momento desmarcando a opção e salvando o desbloqueio.
 
 BANCO DE DADOS CLOUDFLARE D1:
 - Nome do banco D1: manicure001 (tudo minúsculo, sem espaço).
-- Nome da variável de binding usada pela aplicação: DB.
+- Nome da variável de binding usada pela aplicação: DB (exatamente assim, sem espaços). Nome do banco D1 selecionado: manicure001.
 - No painel Cloudflare Pages, configure Functions > D1 database bindings:
   Variable name: DB
   D1 database: manicure001
@@ -134,3 +136,16 @@ PUBLICAÇÃO:
 OBSERVAÇÃO SOBRE SENHAS:
 As senhas padrão existentes foram preservadas: MASTER 1989, ADM/loja 2506.
 Altere-as futuramente pela área administrativa quando desejar.
+
+
+--- BEAUTY STUDIO PRO — VERSÃO MANICURE / CABELEIREIRA ---
+* Segmentos disponíveis em ADM > Configurações: Manicure / Nail designer e Cabeleireira / Salão.
+* Cinco layouts selecionáveis no ADM: Premium, Compacto, Cards destacados, Minimalista e Espaçado/amplo. Layout independente do tema escuro/claro e da cor de destaque.
+* MASTER (senha padrão 1989): permite até 10 lojas e controla a opção “Permitir demonstrações na tela inicial”.
+* Quando a demonstração estiver habilitada e salva, os visitantes veem os botões “Conhecer modo manicure” e “Conhecer modo cabeleireira” na tela inicial.
+* Cada demonstração usa IndexedDB local separado, com clientes, profissionais, serviços, agendamentos, atendimentos, estoque e movimentações fictícias. Não sincroniza nem grava dados demonstrativos no D1.
+* Para sair da demonstração, use “Sair da demonstração” na barra superior.
+* Binding D1 obrigatório no Cloudflare Pages: Tipo Banco de dados D1; Nome/Variable name DB; Valor/banco manicure001. Reenvie também functions/api/salvar.js.
+* A Function cria automaticamente a tabela registros na primeira chamada. O arquivo schema.sql é opcional.
+* Senha MASTER padrão: 1989. Senha ADM/loja padrão: 2506.
+* Após substituir os arquivos no GitHub, confirme o deploy e teste gravação/consulta no D1 antes de entregar o endereço aos clientes.

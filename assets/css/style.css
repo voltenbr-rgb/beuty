@@ -165,3 +165,45 @@ body[data-layout="wide"] .kpi{padding:20px;border-radius:18px}
  body[data-layout="wide"] main{padding:12px 10px 92px}
  body[data-layout="wide"] .g2{grid-template-columns:1fr}
 }
+
+
+/* ===== Layouts com diferenças visuais mais perceptíveis ===== */
+body[data-layout="compact"] #side{padding:8px 6px}
+body[data-layout="compact"] main{max-width:1080px}
+body[data-layout="compact"] .card{border-radius:9px;border-width:1px}
+body[data-layout="compact"] .kpi{border-radius:9px}
+body[data-layout="cards"] main .card{border-radius:24px;border:1px solid color-mix(in srgb,var(--ac) 28%,var(--bd));box-shadow:0 16px 38px -24px color-mix(in srgb,var(--ac) 45%,transparent)}
+body[data-layout="cards"] main .kpi{border-radius:20px;border:1px solid color-mix(in srgb,var(--ac) 32%,var(--bd));background:color-mix(in srgb,var(--card) 90%,var(--ac) 10%)}
+body[data-layout="cards"] main h2,body[data-layout="cards"] main h3{letter-spacing:.01em}
+body[data-layout="clean"] main .card,body[data-layout="clean"] main .kpi{border-radius:8px;border:1px solid var(--bd);box-shadow:none;background:var(--card)}
+body[data-layout="clean"] main .btn{border-radius:7px;box-shadow:none}
+body[data-layout="wide"] main{width:100%;max-width:1760px}
+body[data-layout="wide"] main .card{padding:24px}
+body[data-layout="wide"] main .kpi{min-height:112px;display:flex;flex-direction:column;justify-content:center}
+@media(max-width:760px){
+ body[data-layout="compact"] main .card{padding:10px}
+ body[data-layout="cards"] main .card{border-radius:18px;margin-bottom:16px}
+ body[data-layout="clean"] main .card{padding:12px}
+ body[data-layout="wide"] main .card{padding:14px}
+}
+
+/* Ajustes finais dos cinco layouts: cada opção precisa produzir uma diferença perceptível. */
+body[data-layout="premium"] #side{box-shadow:8px 0 28px #00000018}
+body[data-layout="compact"] #side{width:196px;padding:10px 7px}
+body[data-layout="compact"] #nav button{width:100%;height:auto;padding:7px 9px}
+body[data-layout="compact"] main{padding:14px 16px}
+body[data-layout="compact"] .kpi b{font-size:19px}
+body[data-layout="cards"] main .grid>.kpi{min-height:118px;display:flex;flex-direction:column;justify-content:center}
+body[data-layout="cards"] main .card{border-top:3px solid var(--ac)}
+body[data-layout="clean"] #side{border-right:1px solid var(--bd);background:var(--bg)}
+body[data-layout="clean"] main .card,body[data-layout="clean"] main .kpi{border-radius:6px}
+body[data-layout="clean"] main .btn{border-radius:6px}
+body[data-layout="wide"] main{padding:30px clamp(22px,3vw,54px);max-width:none}
+body[data-layout="wide"] main .grid{grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:20px}
+body[data-layout="wide"] main .card{padding:24px;border-radius:22px}
+@media(max-width:760px){
+ body[data-layout="compact"] #side{width:64px;padding:8px 5px}
+ body[data-layout="compact"] #nav button{width:42px;height:42px;padding:8px}
+ body[data-layout="compact"] main{padding:12px 10px 88px}
+ body[data-layout="wide"] main{padding:14px 10px 92px}
+}
