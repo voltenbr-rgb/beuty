@@ -207,3 +207,83 @@ body[data-layout="wide"] main .card{padding:24px;border-radius:22px}
  body[data-layout="compact"] main{padding:12px 10px 88px}
  body[data-layout="wide"] main{padding:14px 10px 92px}
 }
+
+/* ===== BEAUTY STUDIO PRO · layouts realmente distintos ===== */
+/* 1 Premium: trilho lateral flutuante e conteúdo central (base do sistema). */
+body[data-layout="premium"] #side{width:76px;margin:16px 0 16px 16px;height:calc(100vh - 32px);border-radius:28px;}
+body[data-layout="premium"] #nav button{width:48px;height:48px;justify-content:center}
+/* 2 Compacto: barra lateral estreita, densa e área de trabalho contida. */
+body[data-layout="compact"]{padding-left:0}
+body[data-layout="compact"] #side{width:184px;margin:0;height:100vh;top:0;position:sticky;border-radius:0;padding:14px 10px;border-right:1px solid var(--bd);background:var(--card);align-items:stretch}
+body[data-layout="compact"] #side .brand{display:flex!important;align-items:center;padding:4px 6px 18px;gap:8px}
+body[data-layout="compact"] #side .brand div{display:block!important}
+body[data-layout="compact"] #side .brand img{width:34px;height:34px;border-radius:9px}
+body[data-layout="compact"] #nav{align-items:stretch;gap:3px;margin:0}
+body[data-layout="compact"] #nav button{width:100%;height:38px;justify-content:flex-start;padding:7px 9px;border-radius:8px;text-align:left}
+body[data-layout="compact"] #nav button span{display:inline!important;font-size:12px}
+body[data-layout="compact"] #nav button i{font-size:15px;min-width:22px}
+body[data-layout="compact"] main{max-width:1050px;padding:16px 20px}
+body[data-layout="compact"] main .card,body[data-layout="compact"] main .kpi{border-radius:8px;box-shadow:none}
+/* 3 Cards: sidebar expandida, indicadores em cartões e módulos elevados. */
+body[data-layout="cards"]{padding-left:0}
+body[data-layout="cards"] #side{width:224px;margin:12px;height:calc(100vh - 24px);border-radius:22px;padding:16px 12px;align-items:stretch;background:var(--card);box-shadow:0 12px 36px #0002}
+body[data-layout="cards"] #side .brand{display:flex!important;gap:10px;padding:4px 6px 20px}
+body[data-layout="cards"] #side .brand div{display:block!important}
+body[data-layout="cards"] #nav{align-items:stretch;gap:6px;margin:0}
+body[data-layout="cards"] #nav button{width:100%;height:46px;justify-content:flex-start;padding:8px 12px;border-radius:13px;text-align:left}
+body[data-layout="cards"] #nav button span{display:inline!important}
+body[data-layout="cards"] #nav button i{font-size:18px;min-width:26px}
+body[data-layout="cards"] main{max-width:none;padding:24px 26px}
+body[data-layout="cards"] main .grid{grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:16px}
+body[data-layout="cards"] main .kpi{min-height:132px;border-radius:20px;padding:20px;box-shadow:0 12px 30px -22px var(--ac)}
+body[data-layout="cards"] main .card{border-radius:20px;padding:20px;box-shadow:0 10px 28px -24px #0009}
+/* 4 Navegação superior: menu horizontal no topo, sem trilho lateral. */
+body[data-layout="clean"]{display:flex;flex-direction:column;padding:0!important}
+body[data-layout="clean"] #side{order:0;position:relative;top:auto;width:100%;height:auto;margin:0;border:0;border-bottom:1px solid var(--bd);border-radius:0;padding:10px 18px;display:flex;flex-direction:row;align-items:center;gap:18px;background:var(--card)}
+body[data-layout="clean"] #side .brand{display:flex!important;padding:0;flex:none;gap:8px}
+body[data-layout="clean"] #side .brand div{display:block!important}
+body[data-layout="clean"] #side .brand img{width:34px;height:34px}
+body[data-layout="clean"] #nav{display:flex;flex-direction:row;flex-wrap:wrap;gap:4px;overflow:visible;align-items:center;margin:0}
+body[data-layout="clean"] #nav button{width:auto;height:38px;padding:7px 10px;justify-content:flex-start;border-radius:8px;gap:6px}
+body[data-layout="clean"] #nav button span{display:inline!important;font-size:12px}
+body[data-layout="clean"] #nav button i{font-size:14px}
+body[data-layout="clean"] main{order:1;width:100%;max-width:none;padding:24px clamp(14px,3vw,42px)}
+body[data-layout="clean"] main .card,body[data-layout="clean"] main .kpi{border-radius:8px;box-shadow:none}
+/* 5 Amplo: menu lateral largo, cabeçalho visível e painel em tela larga. */
+body[data-layout="wide"]{padding-left:0}
+body[data-layout="wide"] #side{width:258px;margin:0;height:100vh;top:0;border-radius:0;padding:20px 14px;align-items:stretch;background:var(--card);border-right:1px solid var(--bd)}
+body[data-layout="wide"] #side .brand{display:flex!important;padding:4px 8px 24px}
+body[data-layout="wide"] #side .brand div{display:block!important}
+body[data-layout="wide"] #nav{align-items:stretch;gap:7px;margin:0}
+body[data-layout="wide"] #nav button{width:100%;height:48px;justify-content:flex-start;padding:10px 13px;border-radius:12px;text-align:left}
+body[data-layout="wide"] #nav button span{display:inline!important}
+body[data-layout="wide"] #nav button i{font-size:18px;min-width:28px}
+body[data-layout="wide"] main{max-width:none;width:calc(100% - 258px);padding:30px clamp(24px,4vw,64px)}
+body[data-layout="wide"] main .grid{grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:20px}
+body[data-layout="wide"] main .card{padding:24px;border-radius:18px;margin-bottom:20px}
+/* Tela inicial: demonstrações em área comercial própria, separada dos acessos da equipe. */
+.demo-area{max-width:820px;margin:34px auto 0;padding:24px;border:1px solid color-mix(in srgb,var(--ac) 35%,var(--bd));border-radius:24px;background:linear-gradient(145deg,color-mix(in srgb,var(--ac) 10%,var(--card)),var(--card));box-shadow:0 18px 48px -32px var(--ac)}
+.demo-head{text-align:center;max-width:620px;margin:0 auto 20px}
+.demo-head>span{font-size:10px;font-weight:800;letter-spacing:.16em;color:var(--ac)}
+.demo-head h2{margin:7px 0;font-size:clamp(21px,3vw,28px)}
+.demo-head p{margin:0;color:var(--mu);font-size:13px}
+.demo-cards{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.demo-card{display:grid;grid-template-columns:48px 1fr;align-items:center;gap:10px;padding:17px;text-align:left;border:1px solid var(--bd);border-radius:16px;background:var(--card);color:var(--tx);font:inherit;cursor:pointer;transition:.2s}
+.demo-card:hover{transform:translateY(-3px);border-color:var(--ac);box-shadow:0 12px 28px -18px var(--ac)}
+.demo-icon{grid-row:span 2;width:46px;height:46px;display:grid;place-items:center;border-radius:13px;background:color-mix(in srgb,var(--ac) 14%,var(--bg));font-size:25px}
+.demo-card b{display:block;font-size:15px}.demo-card small{display:block;color:var(--mu);font-size:12px;line-height:1.4;margin-top:3px}.demo-card strong{grid-column:2;color:var(--ac);font-size:12px;margin-top:3px}
+.demo-note{text-align:center;color:var(--mu);font-size:11px;margin:14px 0 0}
+@media(max-width:760px){
+ body[data-layout="compact"] #side,body[data-layout="cards"] #side,body[data-layout="wide"] #side{position:fixed;top:auto;bottom:0;left:0;right:0;width:100%;height:auto;margin:0;border-radius:0;padding:5px;z-index:40;display:block;border-top:1px solid var(--bd)}
+ body[data-layout="compact"] #side .brand,body[data-layout="cards"] #side .brand,body[data-layout="wide"] #side .brand{display:none!important}
+ body[data-layout="compact"] #nav,body[data-layout="cards"] #nav,body[data-layout="wide"] #nav{display:flex;flex-direction:row;overflow-x:auto;gap:3px;align-items:center;margin:0}
+ body[data-layout="compact"] #nav button,body[data-layout="cards"] #nav button,body[data-layout="wide"] #nav button{width:auto;min-width:42px;height:42px;justify-content:center;padding:7px}
+ body[data-layout="compact"] #nav button span,body[data-layout="cards"] #nav button span,body[data-layout="wide"] #nav button span{display:none!important}
+ body[data-layout="compact"] main,body[data-layout="cards"] main,body[data-layout="wide"] main{width:100%;max-width:none;padding:14px 12px 90px}
+ body[data-layout="clean"] #side{display:block;padding:8px 10px}
+ body[data-layout="clean"] #side .brand{display:none!important}
+ body[data-layout="clean"] #nav{flex-wrap:nowrap;overflow-x:auto}
+ body[data-layout="clean"] #nav button{flex:none}
+ body[data-layout="clean"] main{padding:14px 12px 24px}
+ .demo-area{padding:17px;margin:26px 4px 0}.demo-cards{grid-template-columns:1fr}.demo-card{padding:14px}
+}
