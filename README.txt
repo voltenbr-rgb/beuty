@@ -149,3 +149,10 @@ Altere-as futuramente pela área administrativa quando desejar.
 * A Function cria automaticamente a tabela registros na primeira chamada. O arquivo schema.sql é opcional.
 * Senha MASTER padrão: 1989. Senha ADM/loja padrão: 2506.
 * Após substituir os arquivos no GitHub, confirme o deploy e teste gravação/consulta no D1 antes de entregar o endereço aos clientes.
+
+
+--- AJUSTE FINAL DE NAVEGAÇÃO ---
+* O atalho "Início" foi retirado da coluna de módulos e reposicionado acima do conteúdo principal, separado do menu lateral/inferior para evitar saídas acidentais.
+* O botão não aparece na tela inicial nem na área ADM. Ao sair de uma demonstração, o retorno à tela inicial também encerra a sessão demonstrativa.
+* Demonstrações Manicure e Cabeleireira já estavam implementadas nesta versão: aparecem na tela inicial quando "Permitir demonstrações na tela inicial" está ativado no MASTER.
+* Layouts e identidade visual existentes foram preservados.

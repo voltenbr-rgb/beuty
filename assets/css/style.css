@@ -207,3 +207,12 @@ body[data-layout="wide"] main .card{padding:24px;border-radius:22px}
  body[data-layout="compact"] main{padding:12px 10px 88px}
  body[data-layout="wide"] main{padding:14px 10px 92px}
 }
+
+
+/* Botão de retorno à tela inicial: separado do menu de módulos para evitar toques acidentais. */
+.home-return{display:none;align-items:center;gap:8px;margin:0 0 14px;padding:8px 13px;border:1px solid var(--bd);border-radius:12px;background:var(--card);color:var(--tx);font:inherit;font-size:13px;font-weight:650;cursor:pointer;box-shadow:0 5px 16px -12px #0008;position:relative;z-index:2}
+.home-return span{font-size:19px;line-height:1;color:var(--ac)}
+body:not(.home) .home-return{display:inline-flex}
+body.adm .home-return,body.home .home-return{display:none}
+.home-return:hover{border-color:var(--ac);transform:translateY(-1px)}
+@media(max-width:760px){.home-return{margin:0 0 10px;padding:7px 11px;font-size:12px}}
